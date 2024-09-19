@@ -2,47 +2,51 @@ package stackqueue
 
 type Item interface{}
 
-type Stack []Item
+type Stack struct {
+	Data []Item
+}
 
 func (s *Stack) Push(value Item) {
-	*s = append(*s, value)
+	s.Data = append(s.Data, value)
 }
 
 func (s *Stack) Pop() (Item, bool) {
-	if len(*s) == 0 {
+	if len(s.Data) == 0 {
 		return nil, false
 	}
-	index := len(*s) - 1
-	value := (*s)[index]
-	*s = (*s)[:index]
+	index := len(s.Data) - 1
+	value := (s.Data)[index]
+	s.Data = (s.Data)[:index]
 	return value, true
 }
 
 func (s *Stack) Peek() (Item, bool) {
-	if len(*s) == 0 {
+	if len(s.Data) == 0 {
 		return nil, false
 	}
-	return (*s)[len(*s)-1], true
+	return (s.Data)[len(s.Data)-1], true
 }
 
-type Queue []Item
+type Queue struct {
+	Data []Item
+}
 
 func (q *Queue) Enqueue(value Item) {
-	*q = append(*q, value)
+	q.Data = append(q.Data, value)
 }
 
 func (q *Queue) Dequeue() (Item, bool) {
-	if len(*q) == 0 {
+	if len(q.Data) == 0 {
 		return nil, false
 	}
-	value := (*q)[0]
-	*q = (*q)[1:]
+	value := (q.Data)[0]
+	q.Data = (q.Data)[1:]
 	return value, true
 }
 
 func (q *Queue) First() (Item, bool) {
-	if len(*q) == 0 {
+	if len(q.Data) == 0 {
 		return nil, false
 	}
-	return (*q)[0], true
+	return (q.Data)[0], true
 }

@@ -1,10 +1,11 @@
 package calc
 
 import (
-	"awesomeProject4/stackqueue"
 	"fmt"
 	"strconv"
 	"unicode"
+
+	"awesomeProject4/stackqueue"
 )
 
 const (
@@ -12,18 +13,35 @@ const (
 	OperatorSubtract = "-"
 	OperatorMultiply = "*"
 	OperatorDivide   = "/"
+
+	// Специальные символы
+	SymbolDecimalPoint    = "."
+	SymbolUnaryMinus      = "-"
+	SymbolLeftParen       = "("
+	SymbolRightParen      = ")"
+	SymbolExpressionStart = "~"
+	SymbolExpressionEnd   = "?"
+	SymbolEmpty           = ""
+
+	// Коды для матрицы операций
+	MatrixPush    = 1
+	MatrixReplace = 2
+	MatrixPop     = 3
+	MatrixEnqueue = 4
+	MatrixError   = 100
+	MatrixInvalid = -1
 )
 
 // Мапа для приоритета операций
 var OperatorPrecedence = map[string][2]int{
-	"~":              {0, 0},
-	OperatorAdd:      {1, 0},
-	OperatorSubtract: {1, 0},
-	OperatorMultiply: {2, 1},
-	OperatorDivide:   {2, 1},
-	"(":              {3, 2},
-	")":              {3, 3},
-	"?":              {4, 4},
+	SymbolExpressionStart: {0, 0},
+	OperatorAdd:           {1, 0},
+	OperatorSubtract:      {1, 0},
+	OperatorMultiply:      {2, 1},
+	OperatorDivide:        {2, 1},
+	SymbolLeftParen:       {3, 2},
+	SymbolRightParen:      {3, 3},
+	SymbolExpressionEnd:   {4, 4},
 }
 
 // Функция получения индекса
@@ -31,7 +49,7 @@ func getIndex(symbol string) (int, int) {
 	if precedence, exists := OperatorPrecedence[symbol]; exists {
 		return precedence[0], precedence[1]
 	}
-	return -1, -1 // Обработка некорректного символа
+	return MatrixInvalid, MatrixInvalid // Обработка некорректного символа
 }
 
 // Функция выполнения операций для чисел с плавающей точкой
@@ -55,67 +73,99 @@ func performOperation(op1, op2 float64, operator string) (float64, error) {
 
 func Calc(expression string) (float64, error) {
 	matrix := [4][5]int{
-		{1, 1, 1, 100, -1},
-		{2, 1, 1, 4, 4},
-		{4, 2, 1, 4, 4},
-		{1, 1, 1, 3, 100},
+		{MatrixPush, MatrixPush, MatrixPush, MatrixError, MatrixInvalid},
+		{MatrixReplace, MatrixPush, MatrixPush, MatrixEnqueue, MatrixEnqueue},
+		{MatrixEnqueue, MatrixReplace, MatrixPush, MatrixEnqueue, MatrixEnqueue},
+		{MatrixPush, MatrixPush, MatrixPush, MatrixPop, MatrixError},
 	}
 
-	begin := "~"
-	end := "?"
-	str := begin + expression + end
+	// Начало и конец выражения
+	str := SymbolExpressionStart + expression + SymbolExpressionEnd
+	var (
+		stackOperations stackqueue.Stack
+		stackOperands   stackqueue.Stack
+		queueOperands   stackqueue.Queue
+		currentNumber   = SymbolEmpty
+		isNegative      bool
+	)
 
-	var stackOperations stackqueue.Stack
-	var stackOperands stackqueue.Stack
-	var queueOperands stackqueue.Queue
-	currentNumber := ""
-	var isNegative bool
 	stackOperations.Push(string(str[0]))
+
 	for i, r := range str {
 		if i == 0 {
 			continue
 		}
-	repeat:
-		if unicode.IsDigit(r) || r == '.' {
+
+		if unicode.IsDigit(r) || string(r) == SymbolDecimalPoint {
 			currentNumber += string(r)
-		} else if r == '-' && (i == 1 || str[i-1] == '(') {
+		} else if string(r) == OperatorSubtract && (i == 1 || str[i-1] == SymbolLeftParen[0]) {
 			isNegative = true
 		} else {
-			if currentNumber != "" {
-				if isNegative {
-					currentNumber = "-" + currentNumber
-					isNegative = false
-				}
-				num, _ := strconv.ParseFloat(currentNumber, 64)
-				queueOperands.Enqueue(num)
-				currentNumber = ""
+			// Преобразуем и добавляем текущий операнд в очередь
+			convertAndEnqueue(&currentNumber, &queueOperands, &isNegative)
+
+			// Обрабатываем операцию
+			processed, err := processOperation(string(r), &stackOperations, &queueOperands, matrix)
+			if err != nil {
+				return 0, err
 			}
 
-			symbol := string(r)
-			value, _ := stackOperations.Peek()
-			ind1, _ := getIndex(value.(string))
-			_, ind2 := getIndex(symbol)
-
-			switch matrix[ind1][ind2] {
-			case 1:
-				stackOperations.Push(symbol)
-			case 2:
-				stackOperations.Pop()
-				stackOperations.Push(symbol)
-				queueOperands.Enqueue(value)
-			case 3:
-				stackOperations.Pop()
-			case 4:
-				queueOperands.Enqueue(value)
-				stackOperations.Pop()
-				goto repeat
-			case 100:
-				return 0, fmt.Errorf("ошибка в выражении")
+			// Продолжаем обработку, если операция требует повторной обработки (MatrixEnqueue)
+			for processed {
+				processed, err = processOperation(string(r), &stackOperations, &queueOperands, matrix)
+				if err != nil {
+					return 0, err
+				}
 			}
 		}
 	}
 
-	for len(queueOperands) > 0 {
+	// Вынесено в функцию processRemainingOperations
+	return processRemainingOperations(stackOperands, queueOperands)
+}
+
+// convertAndEnqueue преобразует накопленное число и добавляет его в очередь операндов
+func convertAndEnqueue(currentNumber *string, queueOperands *stackqueue.Queue, isNegative *bool) {
+	if *currentNumber != SymbolEmpty {
+		if *isNegative {
+			*currentNumber = SymbolUnaryMinus + *currentNumber
+			*isNegative = false
+		}
+		num, _ := strconv.ParseFloat(*currentNumber, 64)
+		queueOperands.Enqueue(num)
+		*currentNumber = SymbolEmpty
+	}
+}
+
+// processOperation обрабатывает символы операций с использованием матрицы приоритетов
+func processOperation(symbol string, stackOperations *stackqueue.Stack, queueOperands *stackqueue.Queue, matrix [4][5]int) (bool, error) {
+	value, _ := stackOperations.Peek()
+	ind1, _ := getIndex(value.(string))
+	_, ind2 := getIndex(symbol)
+
+	switch matrix[ind1][ind2] {
+	case MatrixPush:
+		stackOperations.Push(symbol)
+	case MatrixReplace:
+		stackOperations.Pop()
+		stackOperations.Push(symbol)
+		queueOperands.Enqueue(value)
+	case MatrixPop:
+		stackOperations.Pop()
+	case MatrixEnqueue:
+		queueOperands.Enqueue(value)
+		stackOperations.Pop()
+		return true, nil // Повторяем обработку после удаления
+	case MatrixError:
+		return false, fmt.Errorf("ошибка в выражении")
+	}
+
+	return false, nil
+}
+
+// processRemainingOperations обрабатывает оставшиеся операнды и операции в очереди
+func processRemainingOperations(stackOperands stackqueue.Stack, queueOperands stackqueue.Queue) (float64, error) {
+	for len(queueOperands.Data) > 0 {
 		element, ok := queueOperands.Dequeue()
 		if !ok {
 			break
@@ -131,9 +181,10 @@ func Calc(expression string) (float64, error) {
 			op1Float := op1.(float64)
 			op2Float := op2.(float64)
 
+			// Выполняем операцию, включая деление на 0
 			result, err := performOperation(op1Float, op2Float, v)
 			if err != nil {
-				return 0, err // Возврат ошибки
+				return 0, err // Если возникает ошибка (например, деление на 0), возвращаем её
 			}
 			stackOperands.Push(result)
 		}

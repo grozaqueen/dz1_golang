@@ -1,9 +1,11 @@
 package main
 
 import (
-	"awesomeProject4/calc"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"awesomeProject4/calc"
+	"awesomeProject4/validation"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsValidExpression_Success_Advanced(t *testing.T) {
@@ -20,7 +22,7 @@ func TestIsValidExpression_Success_Advanced(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			result := isValidExpression(test.input)
+			result := validation.IsValidExpression(test.input)
 			require.Equal(t, test.expected, result, "Для %s, ожидалось %v, но имеем %v", test.input, test.expected, result)
 		})
 	}
@@ -42,7 +44,7 @@ func TestIsValidExpression_Failure_Advanced(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			result := isValidExpression(test.input)
+			result := validation.IsValidExpression(test.input)
 			require.Equal(t, test.expected, result, "Для %s, ожидалось %v, но имеем %v", test.input, test.expected, result)
 		})
 	}
