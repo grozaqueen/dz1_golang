@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+const (
+	SpaceRune     = ' '
+	TabRune       = '\t'
+	DefaultMode   = "default"
+	CountMode     = "count"
+	DuplicateMode = "duplicate"
+	UniqueMode    = "unique"
+	SymbolEmpty   = ""
+)
+
 type Options struct {
 	Mode       string // режим работы (default, count, duplicate, unique)
 	IgnoreCase bool   // игнорировать регистр букв
@@ -15,20 +25,19 @@ type Options struct {
 // Функция для разделения строки на поля
 func splitIntoFields(s string) []string {
 	var fields []string
-	field := ""
+	field := SymbolEmpty
 	inField := false
 
 	for _, r := range s {
-		if r == ' ' || r == '\t' { // Пробел или табуляция считаются разделителями
+		if r == SpaceRune || r == TabRune { // Пробел или табуляция считаются разделителями
 			if inField { // Если мы были внутри поля, то конец поля
 				fields = append(fields, field)
-				field = ""
-				inField = false
+				field = SymbolEmpty
 			}
-		} else {
-			inField = true
-			field += string(r) // Добавляем символ к полю
+			inField = false // Выходим из поля
 		}
+		inField = true
+		field += string(r) // Добавляем символ к полю
 	}
 
 	// Добавляем последнее поле, если строка не закончилась разделителем
@@ -40,35 +49,35 @@ func splitIntoFields(s string) []string {
 }
 
 // функция сравнения пары строк с учетом введенных параметров
-func CompareStrings(str1, str2 string, ignoreCase bool, numFields, numChars int) bool {
+func CompareStrings(str1, str2 string, opts Options) bool {
 	// Игнорируем регистр, если установлен флаг
-	if ignoreCase {
+	if opts.IgnoreCase {
 		str1 = strings.ToLower(str1)
 		str2 = strings.ToLower(str2)
 	}
 
 	// Если нужно игнорировать numFields полей
-	if numFields > 0 {
+	if opts.NumFields > 0 {
 		fields1 := splitIntoFields(str1)
 		fields2 := splitIntoFields(str2)
 
 		// Обрезаем поля для str1
-		if len(fields1) > numFields {
-			str1 = ""
-			for i := numFields; i < len(fields1); i++ {
-				if i > numFields {
-					str1 += " " // Вставляем пробелы между полями
+		if len(fields1) > opts.NumFields {
+			str1 = SymbolEmpty
+			for i := opts.NumFields; i < len(fields1); i++ {
+				if i > opts.NumFields {
+					str1 += string(SpaceRune) // Вставляем пробелы между полями
 				}
 				str1 += fields1[i]
 			}
 		}
 
 		// Аналогично для str2
-		if len(fields2) > numFields {
-			str2 = ""
-			for i := numFields; i < len(fields2); i++ {
-				if i > numFields {
-					str2 += " "
+		if len(fields2) > opts.NumFields {
+			str2 = SymbolEmpty
+			for i := opts.NumFields; i < len(fields2); i++ {
+				if i > opts.NumFields {
+					str2 += string(SpaceRune)
 				}
 				str2 += fields2[i]
 			}
@@ -76,12 +85,12 @@ func CompareStrings(str1, str2 string, ignoreCase bool, numFields, numChars int)
 	}
 
 	// Игнорируем numChars символов путем среза
-	if numChars > 0 {
-		if len(str1) >= numChars {
-			str1 = str1[numChars:]
+	if opts.NumChars > 0 {
+		if len(str1) >= opts.NumChars {
+			str1 = str1[opts.NumChars:]
 		}
-		if len(str2) >= numChars {
-			str2 = str2[numChars:]
+		if len(str2) >= opts.NumChars {
+			str2 = str2[opts.NumChars:]
 		}
 	}
 
@@ -96,31 +105,30 @@ func ProcessStrings(lines []string, opts Options) []string {
 	lineCount := 0
 	isDuplicatePrinted := false
 
+	processPrevLine := func() {
+		if lineCount > 0 && opts.Mode == CountMode {
+			result = append(result, fmt.Sprintf("%d %s", lineCount, prevLine))
+		} else if lineCount == 0 && opts.Mode == UniqueMode {
+			result = append(result, prevLine)
+		}
+	}
+
 	for i, currentLine := range lines {
-		// Сравниваем текущую строку с предыдущей
-		isSameLine := CompareStrings(currentLine, prevLine, opts.IgnoreCase, opts.NumFields, opts.NumChars)
+		isSameLine := CompareStrings(currentLine, prevLine, opts)
 
 		switch opts.Mode {
-		case "default":
-			// Если "default" - выводим строку, если она не совпадает с предыдущей
+		case DefaultMode:
 			if !isSameLine {
 				result = append(result, currentLine)
 			}
-
-		case "count":
-			// В режиме "count" подсчитываем количество повторений каждой строки
+		case CountMode:
 			if isSameLine {
 				lineCount++
 			} else {
-				if lineCount > 0 {
-					result = append(result, fmt.Sprintf("%d %s", lineCount, prevLine))
-				}
+				processPrevLine()
 				lineCount = 1
-				prevLine = currentLine
 			}
-
-		case "duplicate":
-			// При "duplicate" выводим только повторяющиеся строки
+		case DuplicateMode:
 			if isSameLine {
 				lineCount++
 				if lineCount > 1 && !isDuplicatePrinted {
@@ -129,18 +137,14 @@ func ProcessStrings(lines []string, opts Options) []string {
 				}
 			} else {
 				lineCount = 1
-				prevLine = currentLine
 				isDuplicatePrinted = false
 			}
-
-		case "unique":
-			// В режиме "unique" выводим только уникальные строки
+		case UniqueMode:
 			if !isSameLine && lineCount == 0 && i != 0 {
 				result = append(result, prevLine)
 			}
 			if !isSameLine {
 				lineCount = 0
-				prevLine = currentLine
 			} else {
 				lineCount++
 			}
@@ -149,12 +153,7 @@ func ProcessStrings(lines []string, opts Options) []string {
 		prevLine = currentLine
 	}
 
-	// Обрабатываем последнюю строку
-	if opts.Mode == "count" && lineCount > 0 {
-		result = append(result, fmt.Sprintf("%d %s", lineCount, prevLine))
-	} else if opts.Mode == "unique" && lineCount == 0 {
-		result = append(result, prevLine)
-	}
+	processPrevLine()
 
 	return result
 }

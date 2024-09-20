@@ -1,15 +1,18 @@
 package main
 
 import (
-	"awesomeProject5/uniq"
 	"flag"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
+
+	"awesomeProject5/handleflags"
+	"awesomeProject5/uniq"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_processStrings_Success(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		input      []string
@@ -85,7 +88,9 @@ func Test_processStrings_Success(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			opts := uniq.Options{
 				Mode:       tt.mode,
 				IgnoreCase: tt.ignoreCase,
@@ -100,91 +105,105 @@ func Test_processStrings_Success(t *testing.T) {
 
 func TestCompareStrings_Success(t *testing.T) {
 	tests := []struct {
-		name       string
-		str1       string
-		str2       string
-		ignoreCase bool
-		numFields  int
-		numChars   int
-		want       bool
+		name string
+		str1 string
+		str2 string
+		opts uniq.Options
+		want bool
 	}{
 		{
-			name:       "EqualStrings",
-			str1:       "hello",
-			str2:       "hello",
-			ignoreCase: false,
-			numFields:  0,
-			numChars:   0,
-			want:       true,
+			name: "EqualStrings",
+			str1: "hello",
+			str2: "hello",
+			opts: uniq.Options{
+				IgnoreCase: false,
+				NumFields:  0,
+				NumChars:   0,
+			},
+			want: true,
 		},
 		{
-			name:       "DifferentStrings",
-			str1:       "hello",
-			str2:       "world",
-			ignoreCase: false,
-			numFields:  0,
-			numChars:   0,
-			want:       false,
+			name: "DifferentStrings",
+			str1: "hello",
+			str2: "world",
+			opts: uniq.Options{
+				IgnoreCase: false,
+				NumFields:  0,
+				NumChars:   0,
+			},
+			want: false,
 		},
 		{
-			name:       "IgnoreCase_EqualStrings",
-			str1:       "hello",
-			str2:       "HELLO",
-			ignoreCase: true,
-			numFields:  0,
-			numChars:   0,
-			want:       true,
+			name: "IgnoreCase_EqualStrings",
+			str1: "hello",
+			str2: "HELLO",
+			opts: uniq.Options{
+				IgnoreCase: true,
+				NumFields:  0,
+				NumChars:   0,
+			},
+			want: true,
 		},
 		{
-			name:       "IgnoreCase_DifferentStrings",
-			str1:       "hello",
-			str2:       "WORLD",
-			ignoreCase: true,
-			numFields:  0,
-			numChars:   0,
-			want:       false,
+			name: "IgnoreCase_DifferentStrings",
+			str1: "hello",
+			str2: "WORLD",
+			opts: uniq.Options{
+				IgnoreCase: true,
+				NumFields:  0,
+				NumChars:   0,
+			},
+			want: false,
 		},
 		{
-			name:       "NumFields_EqualStrings",
-			str1:       "1 hello world",
-			str2:       "2 hello world",
-			ignoreCase: false,
-			numFields:  1,
-			numChars:   0,
-			want:       true,
+			name: "NumFields_EqualStrings",
+			str1: "1 hello world",
+			str2: "2 hello world",
+			opts: uniq.Options{
+				IgnoreCase: false,
+				NumFields:  1,
+				NumChars:   0,
+			},
+			want: true,
 		},
 		{
-			name:       "NumFields_DifferentStrings",
-			str1:       "1 hello world",
-			str2:       "2 world hello",
-			ignoreCase: false,
-			numFields:  1,
-			numChars:   0,
-			want:       false,
+			name: "NumFields_DifferentStrings",
+			str1: "1 hello world",
+			str2: "2 world hello",
+			opts: uniq.Options{
+				IgnoreCase: false,
+				NumFields:  1,
+				NumChars:   0,
+			},
+			want: false,
 		},
 		{
-			name:       "NumChars_EqualStrings",
-			str1:       "abchello",
-			str2:       "abclowo",
-			ignoreCase: false,
-			numFields:  0,
-			numChars:   3,
-			want:       false,
+			name: "NumChars_EqualStrings",
+			str1: "abchello",
+			str2: "abclowo",
+			opts: uniq.Options{
+				IgnoreCase: false,
+				NumFields:  0,
+				NumChars:   3,
+			},
+			want: false,
 		},
 		{
-			name:       "NumChars_DifferentStrings",
-			str1:       "abchello",
-			str2:       "abcworld",
-			ignoreCase: false,
-			numFields:  0,
-			numChars:   3,
-			want:       false,
+			name: "NumChars_DifferentStrings",
+			str1: "abchello",
+			str2: "abcworld",
+			opts: uniq.Options{
+				IgnoreCase: false,
+				NumFields:  0,
+				NumChars:   3,
+			},
+			want: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := uniq.CompareStrings(tt.str1, tt.str2, tt.ignoreCase, tt.numFields, tt.numChars)
+			got := uniq.CompareStrings(tt.str1, tt.str2, tt.opts)
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -192,15 +211,9 @@ func TestCompareStrings_Success(t *testing.T) {
 
 func TestHandleFlags_Errors(t *testing.T) {
 	tests := []struct {
-		name               string
-		flags              []string
-		expectedMode       string
-		expectedInputFile  string
-		expectedOutputFile string
-		expectedIgnoreCase bool
-		expectedNumFields  int
-		expectedNumChars   int
-		expectedError      error
+		name          string
+		flags         []string
+		expectedError error
 	}{
 		{
 			name:          "conflicting_flags_cd",
@@ -213,45 +226,70 @@ func TestHandleFlags_Errors(t *testing.T) {
 			expectedError: fmt.Errorf("ошибка: Флаги -c, -d и -u взаимоисключающие"),
 		},
 		{
-			name:          "conflicting_flags_du",
-			flags:         []string{"-d", "-u"},
-			expectedError: fmt.Errorf("ошибка: Флаги -c, -d и -u взаимоисключающие"),
+			name:          "too_many_args",
+			flags:         []string{"-c", "input.txt", "output.txt", "extra.txt"},
+			expectedError: fmt.Errorf("ошибка: Слишком много аргументов"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Сохраняем старые аргументы командной строки
 			oldArgs := os.Args
-			defer func() {
-				// Восстанавливаем старые аргументы командной строки
-				os.Args = oldArgs
-			}()
+			defer func() { os.Args = oldArgs }()
 
-			// Сбрасываем состояние пакета flag перед каждым тестом
 			flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-
-			// Устанавливаем новые аргументы командной строки для теста
 			os.Args = append([]string{"cmd"}, tt.flags...)
 
-			// Вызываем тестируемую функцию
-			mode, inputFile, outputFile, ignoreCase, numFields, numChars, err := handleFlags()
+			_, err := handleflags.HandleFlags()
+			require.EqualError(t, err, tt.expectedError.Error())
+		})
+	}
+}
 
-			// Проверяем наличие ошибки
-			if tt.expectedError != nil {
-				require.Error(t, err)
-				require.Equal(t, tt.expectedError.Error(), err.Error())
-				return
-			}
+func TestHandleFlags_Success(t *testing.T) {
+	tests := []struct {
+		name               string
+		flags              []string
+		expectedMode       string
+		expectedInputFile  string
+		expectedOutputFile string
+		expectedIgnoreCase bool
+		expectedNumFields  int
+		expectedNumChars   int
+	}{
+		{
+			name:              "valid_flags_count",
+			flags:             []string{"-c", "input.txt"},
+			expectedMode:      "count",
+			expectedInputFile: "input.txt",
+		},
+		{
+			name:               "valid_flags_ignore_case",
+			flags:              []string{"-c", "-i", "input.txt", "output.txt"},
+			expectedMode:       "count",
+			expectedInputFile:  "input.txt",
+			expectedOutputFile: "output.txt",
+			expectedIgnoreCase: true,
+		},
+	}
 
-			// Проверяем остальные значения, только если не было ошибок
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			oldArgs := os.Args
+			defer func() { os.Args = oldArgs }()
+
+			flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+			os.Args = append([]string{"cmd"}, tt.flags...)
+
+			flags, err := handleflags.HandleFlags()
 			require.NoError(t, err)
-			require.Equal(t, tt.expectedMode, mode)
-			require.Equal(t, tt.expectedInputFile, inputFile)
-			require.Equal(t, tt.expectedOutputFile, outputFile)
-			require.Equal(t, tt.expectedIgnoreCase, ignoreCase)
-			require.Equal(t, tt.expectedNumFields, numFields)
-			require.Equal(t, tt.expectedNumChars, numChars)
+
+			require.Equal(t, tt.expectedMode, flags.Mode)
+			require.Equal(t, tt.expectedInputFile, flags.InputFile)
+			require.Equal(t, tt.expectedOutputFile, flags.OutputFile)
+			require.Equal(t, tt.expectedIgnoreCase, flags.IgnoreCase)
+			require.Equal(t, tt.expectedNumFields, flags.NumFields)
+			require.Equal(t, tt.expectedNumChars, flags.NumChars)
 		})
 	}
 }

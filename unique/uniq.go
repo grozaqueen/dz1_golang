@@ -4,15 +4,18 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	
-	"awesomeProject5/uniq"
+	"os"
+
 	"awesomeProject5/handleflags"
+	"awesomeProject5/uniq"
 )
 
-
 func main() {
+
+	var flags handleflags.Flags
+	var err error
 	// Вызываем функцию handleFlags для обработки флагов командной строки
-	mode, inputFile, outputFile, ignoreCase, numFields, numChars, err := handleflags.HandleFlags()
+	flags, err = handleflags.HandleFlags()
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -20,14 +23,10 @@ func main() {
 
 	// Чтение строк
 	var reader io.Reader
-	if inputFile != "" {
-		file, err := os.Open(inputFile)
-		if err != nil {
-			fmt.Println("Ошибка при открытии файла:", err)
-			return
-		}
-		defer file.Close()
+	file, err := os.Open(flags.InputFile)
+	if err == nil {
 		reader = file
+		defer file.Close()
 	} else {
 		reader = os.Stdin
 	}
@@ -41,10 +40,10 @@ func main() {
 
 	// Настройка опций
 	opts := uniq.Options{
-		Mode:       mode,
-		IgnoreCase: ignoreCase,
-		NumFields:  numFields,
-		NumChars:   numChars,
+		Mode:       flags.Mode,
+		IgnoreCase: flags.IgnoreCase,
+		NumFields:  flags.NumFields,
+		NumChars:   flags.NumChars,
 	}
 
 	// Обрабатываем строки с помощью новой функции
@@ -52,8 +51,8 @@ func main() {
 
 	// Записываем результат
 	var writer io.Writer
-	if outputFile != "" {
-		file, err := os.Create(outputFile)
+	if flags.OutputFile != "" {
+		file, err := os.Create(flags.OutputFile)
 		if err != nil {
 			fmt.Println("Ошибка при создании файла:", err)
 			return
