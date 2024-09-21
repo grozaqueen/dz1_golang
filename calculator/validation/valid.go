@@ -7,6 +7,10 @@ import (
 	"awesomeProject4/stackqueue"
 )
 
+const (
+	numberOfpoint = 1
+)
+
 // Дополнительная функция для проверки на оператор
 func isOperator(symbol string) bool {
 	return symbol == calc.OperatorAdd || symbol == calc.OperatorDivide || symbol == calc.OperatorMultiply || symbol == calc.OperatorSubtract
@@ -23,7 +27,7 @@ func isNumber(str string) bool {
 		}
 		if string(r) == calc.SymbolDecimalPoint {
 			dotCount++
-			if dotCount > 1 || i == 0 || i == len(str)-1 {
+			if dotCount > numberOfpoint || i == 0 || i == len(str)-1 {
 				return false // Только одна точка допустима и не может быть в начале или в конце
 			}
 		}
@@ -56,11 +60,10 @@ func IsValidExpression(str string) bool {
 			currentNumber += symbol // Накопление числа
 			lastToken = r
 		case isOperator(symbol):
-			if currentNumber != calc.SymbolEmpty {
-				if !isNumber(currentNumber) {
-					return false // Некорректное число (проверка на вещественное число)
-				}
-				currentNumber = calc.SymbolEmpty
+			var valid bool
+			valid, currentNumber = validateCurrentNumber(currentNumber)
+			if !valid {
+				return false // Некорректное число (проверка на вещественное число)
 			}
 			if i == 0 || lastToken == rune(calc.SymbolLeftParen[0]) {
 				if symbol != calc.SymbolUnaryMinus { // Унарный минус допустим
@@ -78,11 +81,10 @@ func IsValidExpression(str string) bool {
 			parenthesesStack.Push(symbol)
 			lastToken = r
 		case symbol == calc.SymbolRightParen:
-			if currentNumber != calc.SymbolEmpty {
-				if !isNumber(currentNumber) {
-					return false // Некорректное число перед закрывающей скобкой
-				}
-				currentNumber = calc.SymbolEmpty
+			var valid bool
+			valid, currentNumber = validateCurrentNumber(currentNumber)
+			if !valid {
+				return false // Некорректное число перед закрывающей скобкой
 			}
 			if _, ok := parenthesesStack.Pop(); !ok {
 				return false // Не хватает открывающей скобки
@@ -108,4 +110,17 @@ func IsValidExpression(str string) bool {
 	}
 
 	return true
+}
+
+// validateCurrentNumber проверяет, является ли currentNumber корректным числом и возвращает обновленное значение
+func validateCurrentNumber(currentNumber string) (bool, string) {
+	if currentNumber != calc.SymbolEmpty {
+		if !isNumber(currentNumber) {
+			return false, currentNumber // Некорректное число (проверка на вещественное число)
+		}
+
+		return true, calc.SymbolEmpty // Число корректно, сбрасываем
+	}
+
+	return true, currentNumber // Если пустое, возвращаем как есть
 }

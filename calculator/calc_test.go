@@ -9,6 +9,7 @@ import (
 )
 
 func TestIsValidExpression_Success_Advanced(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input    string
 		expected bool
@@ -21,14 +22,18 @@ func TestIsValidExpression_Success_Advanced(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.input, func(t *testing.T) {
+			t.Parallel()
 			result := validation.IsValidExpression(test.input)
+
 			require.Equal(t, test.expected, result, "Для %s, ожидалось %v, но имеем %v", test.input, test.expected, result)
 		})
 	}
 }
 
 func TestIsValidExpression_Failure_Advanced(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input    string
 		expected bool
@@ -43,14 +48,18 @@ func TestIsValidExpression_Failure_Advanced(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.input, func(t *testing.T) {
+			t.Parallel()
 			result := validation.IsValidExpression(test.input)
+
 			require.Equal(t, test.expected, result, "Для %s, ожидалось %v, но имеем %v", test.input, test.expected, result)
 		})
 	}
 }
 
 func TestCalculator_Success_Advanced(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input    string
 		expected float64
@@ -64,8 +73,11 @@ func TestCalculator_Success_Advanced(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.input, func(t *testing.T) {
+			t.Parallel()
 			result, err := calc.Calc(test.input)
+
 			require.NoError(t, err, "Для %s, неожиданная ошибка: %v", test.input, err)
 			require.InEpsilon(t, test.expected, result, 0.0001, "Для %s, ожидалось %f, но имеем %f", test.input, test.expected, result)
 		})
@@ -73,6 +85,7 @@ func TestCalculator_Success_Advanced(t *testing.T) {
 }
 
 func TestCalculator_Failure_Advanced(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input string
 	}{
@@ -80,8 +93,11 @@ func TestCalculator_Failure_Advanced(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		test := test
 		t.Run(test.input, func(t *testing.T) {
+			t.Parallel()
 			_, err := calc.Calc(test.input)
+
 			require.Error(t, err, "Для %s, ожидалась ошибка, но ничего не вышло", test.input)
 		})
 	}

@@ -98,20 +98,22 @@ func CompareStrings(str1, str2 string, opts Options) bool {
 	return str1 == str2
 }
 
+func processPrevLine(lineCount int, prevLine string, mode string, result []string) []string {
+	if lineCount > 0 && mode == CountMode {
+		result = append(result, fmt.Sprintf("%d %s", lineCount, prevLine))
+	} else if lineCount == 0 && mode == UniqueMode {
+		result = append(result, prevLine)
+	}
+
+	return result
+}
+
 // Функция для уникализации строк
 func ProcessStrings(lines []string, opts Options) []string {
 	var result []string
 	var prevLine string
 	lineCount := 0
 	isDuplicatePrinted := false
-
-	processPrevLine := func() {
-		if lineCount > 0 && opts.Mode == CountMode {
-			result = append(result, fmt.Sprintf("%d %s", lineCount, prevLine))
-		} else if lineCount == 0 && opts.Mode == UniqueMode {
-			result = append(result, prevLine)
-		}
-	}
 
 	for i, currentLine := range lines {
 		isSameLine := CompareStrings(currentLine, prevLine, opts)
@@ -121,13 +123,15 @@ func ProcessStrings(lines []string, opts Options) []string {
 			if !isSameLine {
 				result = append(result, currentLine)
 			}
+
 		case CountMode:
 			if isSameLine {
 				lineCount++
-			} else {
-				processPrevLine()
-				lineCount = 1
+				break
 			}
+			result = processPrevLine(lineCount, prevLine, opts.Mode, result)
+			lineCount = 1
+
 		case DuplicateMode:
 			if isSameLine {
 				lineCount++
@@ -135,25 +139,26 @@ func ProcessStrings(lines []string, opts Options) []string {
 					result = append(result, currentLine)
 					isDuplicatePrinted = true
 				}
-			} else {
-				lineCount = 1
-				isDuplicatePrinted = false
+				break
 			}
+			lineCount = 1
+			isDuplicatePrinted = false
+
 		case UniqueMode:
 			if !isSameLine && lineCount == 0 && i != 0 {
 				result = append(result, prevLine)
 			}
 			if !isSameLine {
 				lineCount = 0
-			} else {
-				lineCount++
+				break
 			}
+			lineCount++
 		}
 
 		prevLine = currentLine
 	}
 
-	processPrevLine()
+	result = processPrevLine(lineCount, prevLine, opts.Mode, result)
 
 	return result
 }

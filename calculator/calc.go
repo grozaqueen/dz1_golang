@@ -9,8 +9,10 @@ import (
 	"awesomeProject4/validation"
 )
 
+const minArgs = 2
+
 func main() {
-	if len(os.Args) < 2 {
+	if len(os.Args) < minArgs {
 		fmt.Println("Использование: go run calc.go \"выражение\"")
 		return
 	}
@@ -19,7 +21,7 @@ func main() {
 
 	// Удаляем все пробелы и табуляции
 	str = strings.ReplaceAll(str, calc.SymbolEmpty, "")
-	str = strings.ReplaceAll(str, "\t", "")
+	str = strings.ReplaceAll(str, calc.SymbolTab, "")
 
 	if !validation.IsValidExpression(str) {
 		fmt.Println("Ошибка: Некорректное выражение")

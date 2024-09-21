@@ -78,13 +78,14 @@ func HandleFlags() (Flags, error) {
 
 	// Определяем режим работы на основе флагов
 	var mode string
-	if countFlag {
+	switch {
+	case countFlag:
 		mode = "count"
-	} else if duplicateFlag {
+	case duplicateFlag:
 		mode = "duplicate"
-	} else if uniqueFlag {
+	case uniqueFlag:
 		mode = "unique"
-	} else {
+	default:
 		mode = "default"
 	}
 

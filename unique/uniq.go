@@ -18,6 +18,7 @@ func main() {
 	flags, err = handleflags.HandleFlags()
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -55,6 +56,7 @@ func main() {
 		file, err := os.Create(flags.OutputFile)
 		if err != nil {
 			fmt.Println("Ошибка при создании файла:", err)
+
 			return
 		}
 		defer file.Close()

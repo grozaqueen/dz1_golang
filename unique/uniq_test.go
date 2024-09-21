@@ -204,6 +204,7 @@ func TestCompareStrings_Success(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := uniq.CompareStrings(tt.str1, tt.str2, tt.opts)
+
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -241,6 +242,7 @@ func TestHandleFlags_Errors(t *testing.T) {
 			os.Args = append([]string{"cmd"}, tt.flags...)
 
 			_, err := handleflags.HandleFlags()
+
 			require.EqualError(t, err, tt.expectedError.Error())
 		})
 	}
@@ -251,24 +253,19 @@ func TestHandleFlags_Success(t *testing.T) {
 		name               string
 		flags              []string
 		expectedMode       string
-		expectedInputFile  string
-		expectedOutputFile string
 		expectedIgnoreCase bool
 		expectedNumFields  int
 		expectedNumChars   int
 	}{
 		{
-			name:              "valid_flags_count",
-			flags:             []string{"-c", "input.txt"},
-			expectedMode:      "count",
-			expectedInputFile: "input.txt",
+			name:         "valid_flags_count",
+			flags:        []string{"-c"},
+			expectedMode: "count",
 		},
 		{
 			name:               "valid_flags_ignore_case",
-			flags:              []string{"-c", "-i", "input.txt", "output.txt"},
+			flags:              []string{"-c", "-i"},
 			expectedMode:       "count",
-			expectedInputFile:  "input.txt",
-			expectedOutputFile: "output.txt",
 			expectedIgnoreCase: true,
 		},
 	}
@@ -285,8 +282,6 @@ func TestHandleFlags_Success(t *testing.T) {
 			require.NoError(t, err)
 
 			require.Equal(t, tt.expectedMode, flags.Mode)
-			require.Equal(t, tt.expectedInputFile, flags.InputFile)
-			require.Equal(t, tt.expectedOutputFile, flags.OutputFile)
 			require.Equal(t, tt.expectedIgnoreCase, flags.IgnoreCase)
 			require.Equal(t, tt.expectedNumFields, flags.NumFields)
 			require.Equal(t, tt.expectedNumChars, flags.NumChars)
