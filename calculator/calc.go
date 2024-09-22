@@ -1,12 +1,12 @@
 package main
 
 import (
+	"awesomeProject4/validation"
 	"fmt"
 	"os"
 	"strings"
 
 	"awesomeProject4/calc"
-	"awesomeProject4/validation"
 )
 
 const minArgs = 2
@@ -20,9 +20,8 @@ func main() {
 	str := os.Args[1]
 
 	// Удаляем все пробелы и табуляции
-	str = strings.ReplaceAll(str, calc.SymbolEmpty, "")
+	str = strings.ReplaceAll(str, calc.SymbolSpace, "")
 	str = strings.ReplaceAll(str, calc.SymbolTab, "")
-
 	if !validation.IsValidExpression(str) {
 		fmt.Println("Ошибка: Некорректное выражение")
 		return

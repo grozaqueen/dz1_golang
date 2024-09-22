@@ -23,6 +23,7 @@ const (
 	SymbolExpressionEnd   = "?"
 	SymbolEmpty           = ""
 	SymbolTab             = "\t"
+	SymbolSpace           = " "
 
 	// Коды для матрицы операций
 	MatrixPush    = 1
