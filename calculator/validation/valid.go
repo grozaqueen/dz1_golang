@@ -51,7 +51,7 @@ func IsValidExpression(str string) bool {
 		symbol := string(r)
 
 		switch {
-		case symbol == calc.SymbolEmpty:
+		case symbol == calc.SymbolSpace:
 			continue // Пропускаем пробелы
 		case unicode.IsDigit(r) || r == rune(calc.SymbolDecimalPoint[0]):
 			if i > 0 && lastToken == rune(calc.SymbolRightParen[0]) {

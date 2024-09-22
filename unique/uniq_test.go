@@ -249,6 +249,7 @@ func TestHandleFlags_Errors(t *testing.T) {
 }
 
 func TestHandleFlags_Success(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name               string
 		flags              []string
@@ -271,7 +272,9 @@ func TestHandleFlags_Success(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			oldArgs := os.Args
 			defer func() { os.Args = oldArgs }()
 

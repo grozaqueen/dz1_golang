@@ -1,12 +1,12 @@
 package main
 
 import (
-	"awesomeProject4/validation"
 	"fmt"
 	"os"
 	"strings"
 
 	"awesomeProject4/calc"
+	"awesomeProject4/validation"
 )
 
 const minArgs = 2
