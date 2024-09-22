@@ -15,15 +15,17 @@ const (
 	OperatorDivide   = "/"
 
 	// Специальные символы
-	SymbolDecimalPoint    = "."
-	SymbolUnaryMinus      = "-"
-	SymbolLeftParen       = "("
-	SymbolRightParen      = ")"
-	SymbolExpressionStart = "~"
-	SymbolExpressionEnd   = "?"
-	SymbolEmpty           = ""
-	SymbolTab             = "\t"
-	SymbolSpace           = " "
+	SymbolDecimalPoint        = "."
+	SymbolUnaryMinus          = "-"
+	SymbolLeftParen           = "("
+	SymbolRightParen          = ")"
+	SymbolExpressionStart     = "~"
+	SymbolExpressionEnd       = "?"
+	SymbolEmpty               = ""
+	SymbolTab                 = "\t"
+	SymbolSpace               = " "
+	NegativeThreeUnaryMinus   = "-("
+	DenialBeforeNegativeThree = "(-1)*"
 
 	// Коды для матрицы операций
 	MatrixPush    = 1

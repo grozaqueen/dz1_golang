@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"awesomeProject4/calc"
+	"awesomeProject4/preprocess"
 	"awesomeProject4/validation"
 )
 
@@ -19,15 +19,17 @@ func main() {
 
 	str := os.Args[1]
 
-	// Удаляем все пробелы и табуляции
-	str = strings.ReplaceAll(str, calc.SymbolSpace, "")
-	str = strings.ReplaceAll(str, calc.SymbolTab, "")
+	// Выполняем предобработку строки
+	str = preprocess.PreprocessExpression(str)
+
+	// Проверяем корректность выражения
 	if !validation.IsValidExpression(str) {
 		fmt.Println("Ошибка: Некорректное выражение")
 		return
 	}
 
-	result, err := calc.Calc(str) // Вызов функции calc
+	// Вызов функции calc для вычисления выражения
+	result, err := calc.Calc(str)
 	if err != nil {
 		fmt.Println("Ошибка:", err)
 		return
